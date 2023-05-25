@@ -1,0 +1,42 @@
+version: '3.9'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: bash -c "python manage.py makemigrations && python manage.py migrate  && python manage.py runserver 0.0.0.0:8000"
+    container_name: app
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  db:
+    image: postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_NAME=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A FR worker --loglevel=info
+    depends_on:
+      - app
+      - db
+      - redis
+
+volumes:
+  postgres_data:
